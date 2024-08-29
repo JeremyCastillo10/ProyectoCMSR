@@ -1,0 +1,66 @@
+﻿@page "/ConsultaMedicos"
+@using ProyectoCMSR.Shared.DTOS
+@inject HttpClient Http
+@using MudBlazor
+
+<MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4">Lista de Médicos</MudText>
+
+@if (medicos == null)
+{
+    <MudText Typo="Typo.body1" Align="Align.Center"><em>Cargando...</em></MudText>
+}
+else if (!medicos.Any())
+{
+    <MudText Typo="Typo.body1" Align="Align.Center">No hay médicos disponibles.</MudText>
+}
+else
+{
+    <MudGrid>
+        @foreach (var med in medicos)
+        {
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                <MudCard>
+                    <MudCardMedia Image="@GetImageSource(med.ImagenBase64)" />
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">@med.Nombre</MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <a class="btn btn-sm btn-outline-primary oi oi-eye" href="CrearMedicos/@med.Id">Ver</a>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private List<Medicos_M> medicos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        medicos = await Http.GetFromJsonAsync<List<Medicos_M>>("api/medicos/getMedicos");
+    }
+
+    private string GetImageSource(string base64Image)
+    {
+        return $"data:image/png;base64,{base64Image}";
+    }
+
+    private async Task DeleteMedico(int id)
+    {
+        var response = await Http.DeleteAsync($"api/medicos/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            var deletedMedico = medicos.FirstOrDefault(m => m.Id == id);
+            if (deletedMedico != null)
+            {
+                medicos.Remove(deletedMedico);
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            // Handle the error, maybe show a message to the user
+        }
+    }
+}

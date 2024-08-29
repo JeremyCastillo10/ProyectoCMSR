@@ -1,0 +1,55 @@
+﻿@using MudBlazor
+@inherits LayoutComponentBase
+
+<div class="page">
+    <MudLayout>
+        <!-- Updated AppBar with a more pronounced blue color -->
+        <MudAppBar Position="AppBarPosition.Top" style="background-color:steelblue" Elevation="1">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" OnClick="ToggleDrawer" />
+            <MudText Typo="Typo.h5" Class="ml-2 text-white">Centro Médico San Rafael</MudText>
+        </MudAppBar>
+
+        <!-- Updated Drawer with blue background and improved styling -->
+        <MudDrawer Variant="DrawerVariant.Responsive"
+                   Elevation="4"
+                   Open="@_drawerOpen"
+                   Style="transition: transform 0.3s ease; background-color:steelblue;">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6" Class="text-white">Menú</MudText>
+            </MudDrawerHeader>
+            <MudNavMenu Class="text-white">
+                <MudNavLink Href="/" Class="mud-nav-link">
+                    <MudIcon Icon="@Icons.Material.Filled.Home" />
+                    <span class="ml-2">Home</span>
+                </MudNavLink>
+                <MudNavLink Href="/CrearMedicos" Class="mud-nav-link">
+                    <MudIcon Icon="@Icons.Material.Filled.Add" />
+                    <span class="ml-2">Crear Médicos</span>
+                </MudNavLink>
+                <MudNavLink Href="/ConsultaMedicos" Class="mud-nav-link">
+                    <MudIcon Icon="@Icons.Material.Filled.List" />
+                    <span class="ml-2">Consulta Médicos</span>
+                </MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
+
+        <!-- Content area with fixed width and transition effect -->
+        <div class="content" style="margin-left:@(_drawerOpen ? "250px" : "0px"); margin-top: 64px; transition: margin-left 0.3s ease; width: calc(100% - @( _drawerOpen ? "250px" : "0px"));">
+            @Body
+        </div>
+    </MudLayout>
+</div>
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+@code {
+    private bool _drawerOpen = false;
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+        StateHasChanged(); // Ensure the UI updates
+    }
+}

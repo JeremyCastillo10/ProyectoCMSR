@@ -1,0 +1,134 @@
+﻿@page "/CrearMedicos"
+@page "/CrearMedicos/{Id:int}"
+@using CurrieTechnologies.Razor.SweetAlert2
+@using Newtonsoft.Json
+@using ProyectoCMSR.Shared.DTOS
+@inject SweetAlertService swal;
+@inject HttpClient Http;
+@inject NavigationManager nav;
+<MudContainer Class="mt-4">
+    <MudPaper Class="p-6 mx-auto" Style="max-width: 800px;">
+        <MudText Typo="Typo.h4" Class="mb-4">Formulario Creación de Médicos</MudText>
+
+        <EditForm Model="@medico" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <MudGrid Spacing="3">
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="medico.Nombre" Label="Nombre" Variant="Variant.Outlined" FullWidth />
+                    <ValidationMessage For="@(() => medico.Nombre)" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="medico.Descripcion" Label="Descripción" Variant="Variant.Outlined" FullWidth />
+                    <ValidationMessage For="@(() => medico.Descripcion)" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <InputSelect @bind-Value="medico.EspecialidadId" class="form form-control">
+                        <option value="">--Seleccione Especialidad--</option>
+                        @foreach (var item in especialidades)
+                        {
+                            <option value="@item.Id">@item.Nombre</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => medico.EspecialidadId)" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudText Class="mb-2">Subir Imagen</MudText>
+                    <InputFile OnChange="HandleFileSelected" />
+
+                    @if (!string.IsNullOrEmpty(base64Image))
+                    {
+                        <img src="data:image/jpeg;base64,@base64Image" alt="Imagen del Médico" style="max-width: 200px; margin-top: 10px;" />
+                    }
+
+                    <ValidationMessage For="@(() => medico.ImagenBase64)" />
+                </MudItem>
+
+                <MudItem xs="12" class="mt-4">
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled" FullWidth>
+                        @botonAccion
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Medicos_M medico = new Medicos_M();
+    private string base64Image;
+    private List<Especialidad_M> especialidades = new List<Especialidad_M>();
+    public string botonAccion { get; set; } = "Crear Medico";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        especialidades = await Http.GetFromJsonAsync<List<Especialidad_M>>("api/especialidad/getEspecialidad");
+
+        if (Id != 0)
+        {
+            medico = await Http.GetFromJsonAsync<Medicos_M>($"api/medicos/getMedicoById/{Id}");
+            base64Image = medico.ImagenBase64;
+            botonAccion = "Modificar Medico";
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        medico.ImagenBase64 = base64Image;
+        var response = await Http.PostAsJsonAsync("api/medicos", medico);
+
+        if (response.IsSuccessStatusCode)
+        {
+            alertGuarda();
+            IrALista();
+        }
+        else
+        {
+            alertNoGuarda();
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        var buffer = new byte[file.Size];
+        await file.OpenReadStream().ReadAsync(buffer);
+        base64Image = Convert.ToBase64String(buffer);
+        medico.ImagenBase64 = base64Image;
+    }
+
+    public async void alertGuarda()
+    {
+        var res = await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Exito",
+                Text = "Guardado con exito!!!",
+                Icon = SweetAlertIcon.Success,
+                ConfirmButtonText = "OK"
+
+            });
+    }
+
+    public async void alertNoGuarda()
+    {
+        var res = await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Error",
+                Text = "No Guarda!!!",
+                Icon = SweetAlertIcon.Error,
+                ConfirmButtonText = "OK"
+
+            });
+    }
+
+    private void IrALista()
+    {
+        nav.NavigateTo("/ConsultaMedicos");
+    }
+}

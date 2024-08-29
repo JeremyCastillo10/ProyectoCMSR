@@ -1,0 +1,7 @@
+.mud-nav-link {
+    color: white !important; /* Asegura que el color blanco se aplique */
+}
+
+    .mud-nav-link:hover {
+        color: lightgray; /* O el color que prefieras para el estado hover */
+    }

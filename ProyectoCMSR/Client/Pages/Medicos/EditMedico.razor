@@ -1,0 +1,31 @@
+﻿@page "/EditMedico/{Id:int}"
+@using CurrieTechnologies.Razor.SweetAlert2
+@using ProyectoCMSR.Shared.DTOS
+@inject NavigationManager navManager;
+@inject SweetAlertService swal;
+@inject HttpClient Http
+<EditForm Model="medico" >
+    <FormMedico medico="medico"></FormMedico>
+    <MudCardActions>
+        <MudContainer Class="d-flex justify-center">
+            <MudButton Class="p-6" Style="max-width: 800px; " Color="Color.Primary" Variant="Variant.Filled" FullWidth>
+               Editar Medico
+            </MudButton>
+        </MudContainer>
+    </MudCardActions>
+   
+</EditForm>
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    [Parameter]
+    public Medicos_M medico { get; set; } = new Medicos_M();
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id != 0)
+        {
+            medico = await Http.GetFromJsonAsync<Medicos_M>($"api/medicos/getMedicoById/{Id}");
+        }
+
+    }
+}
