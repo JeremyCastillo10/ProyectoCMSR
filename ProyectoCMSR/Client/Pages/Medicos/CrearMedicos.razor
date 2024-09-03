@@ -1,49 +1,67 @@
-﻿@page "/CrearMedicos"
-@page "/CrearMedicos/{Id:int}"
+﻿@page "/CrearArticulos"
+@page "/CrearArticulos/{Id:int}"
 @using CurrieTechnologies.Razor.SweetAlert2
 @using Newtonsoft.Json
 @using ProyectoCMSR.Shared.DTOS
-@inject SweetAlertService swal;
-@inject HttpClient Http;
-@inject NavigationManager nav;
+@inject SweetAlertService swal
+@inject HttpClient Http
+@inject NavigationManager nav
+
 <MudContainer Class="mt-4">
     <MudPaper Class="p-6 mx-auto" Style="max-width: 800px;">
-        <MudText Typo="Typo.h4" Class="mb-4">Formulario Creación de Médicos</MudText>
+        <MudText Typo="Typo.h4" Class="mb-4">Formulario Creación de Artículos</MudText>
 
-        <EditForm Model="@medico" OnValidSubmit="HandleValidSubmit">
+        <!-- Conditionally display the trash icon -->
+        @if (Id != 0)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="DeleteArticulo" />
+        }
+
+        <EditForm Model="@articulo" OnValidSubmit="HandleValidSubmit">
             <DataAnnotationsValidator />
             <MudGrid Spacing="3">
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="medico.Nombre" Label="Nombre" Variant="Variant.Outlined" FullWidth />
-                    <ValidationMessage For="@(() => medico.Nombre)" />
+                    <MudTextField @bind-Value="articulo.Titulo" Label="Título" Variant="Variant.Outlined" FullWidth />
+                    <ValidationMessage For="@(() => articulo.Titulo)" />
                 </MudItem>
 
                 <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="medico.Descripcion" Label="Descripción" Variant="Variant.Outlined" FullWidth />
-                    <ValidationMessage For="@(() => medico.Descripcion)" />
-                </MudItem>
-
-                <MudItem xs="12" md="6">
-                    <InputSelect @bind-Value="medico.EspecialidadId" class="form form-control">
-                        <option value="">--Seleccione Especialidad--</option>
-                        @foreach (var item in especialidades)
-                        {
-                            <option value="@item.Id">@item.Nombre</option>
-                        }
-                    </InputSelect>
-                    <ValidationMessage For="@(() => medico.EspecialidadId)" />
+                    <MudTextField @bind-Value="articulo.Autor" Label="Autor" Variant="Variant.Outlined" FullWidth />
+                    <ValidationMessage For="@(() => articulo.Autor)" />
                 </MudItem>
 
                 <MudItem xs="12">
-                    <MudText Class="mb-2">Subir Imagen</MudText>
-                    <InputFile OnChange="HandleFileSelected" />
+                    <MudTextField @bind-Value="articulo.Categoria" Label="Categoría" Variant="Variant.Outlined" FullWidth />
+                    <ValidationMessage For="@(() => articulo.Categoria)" />
+                </MudItem>
 
-                    @if (!string.IsNullOrEmpty(base64Image))
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="articulo.Contenido" Label="Contenido" Variant="Variant.Outlined" Multiline Rows="6" FullWidth />
+                    <ValidationMessage For="@(() => articulo.Contenido)" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudText Class="mb-2">Subir Imagen Principal</MudText>
+                    <InputFile OnChange="HandleFilePrincipalSelected" />
+
+                    @if (!string.IsNullOrEmpty(base64ImagePrincipal))
                     {
-                        <img src="data:image/jpeg;base64,@base64Image" alt="Imagen del Médico" style="max-width: 200px; margin-top: 10px;" />
+                        <img src="data:image/jpeg;base64,@base64ImagePrincipal" alt="Imagen Principal" style="max-width: 200px; margin-top: 10px;" />
                     }
 
-                    <ValidationMessage For="@(() => medico.ImagenBase64)" />
+                    <ValidationMessage For="@(() => articulo.ImagenPrincipal)" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudText Class="mb-2">Subir Imagen de Contenido</MudText>
+                    <InputFile OnChange="HandleFileContenidoSelected" />
+
+                    @if (!string.IsNullOrEmpty(base64ImageContenido))
+                    {
+                        <img src="data:image/jpeg;base64,@base64ImageContenido" alt="Imagen de Contenido" style="max-width: 200px; margin-top: 10px;" />
+                    }
+
+                    <ValidationMessage For="@(() => articulo.ImagenContenido)" />
                 </MudItem>
 
                 <MudItem xs="12" class="mt-4">
@@ -60,75 +78,118 @@
     [Parameter]
     public int Id { get; set; }
 
-    private Medicos_M medico = new Medicos_M();
-    private string base64Image;
-    private List<Especialidad_M> especialidades = new List<Especialidad_M>();
-    public string botonAccion { get; set; } = "Crear Medico";
-
+    private Articulos_M articulo = new Articulos_M();
+    private string base64ImagePrincipal;
+    private string base64ImageContenido;
+    public string botonAccion { get; set; } = "Crear Artículo";
 
     protected override async Task OnInitializedAsync()
     {
-        especialidades = await Http.GetFromJsonAsync<List<Especialidad_M>>("api/especialidad/getEspecialidad");
-
         if (Id != 0)
         {
-            medico = await Http.GetFromJsonAsync<Medicos_M>($"api/medicos/getMedicoById/{Id}");
-            base64Image = medico.ImagenBase64;
-            botonAccion = "Modificar Medico";
+            articulo = await Http.GetFromJsonAsync<Articulos_M>($"api/articulos/getArticulosById/{Id}");
+            base64ImagePrincipal = articulo.ImagenPrincipal;
+            base64ImageContenido = articulo.ImagenContenido;
+            botonAccion = "Modificar Artículo";
         }
     }
 
     private async Task HandleValidSubmit()
     {
-        medico.ImagenBase64 = base64Image;
-        var response = await Http.PostAsJsonAsync("api/medicos", medico);
+        articulo.ImagenPrincipal = base64ImagePrincipal;
+        articulo.ImagenContenido = base64ImageContenido;
+
+        HttpResponseMessage response;
+        if (Id == 0)
+        {
+            response = await Http.PostAsJsonAsync("api/articulos", articulo);
+        }
+        else
+        {
+            response = await Http.PutAsJsonAsync($"api/articulos/{Id}", articulo);
+        }
 
         if (response.IsSuccessStatusCode)
         {
-            alertGuarda();
+            await alertGuarda();
             IrALista();
         }
         else
         {
-            alertNoGuarda();
+            await alertNoGuarda();
         }
     }
 
-    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    private async Task HandleFilePrincipalSelected(InputFileChangeEventArgs e)
     {
         var file = e.File;
         var buffer = new byte[file.Size];
         await file.OpenReadStream().ReadAsync(buffer);
-        base64Image = Convert.ToBase64String(buffer);
-        medico.ImagenBase64 = base64Image;
+        base64ImagePrincipal = Convert.ToBase64String(buffer);
+        articulo.ImagenPrincipal = base64ImagePrincipal;
     }
 
-    public async void alertGuarda()
+    private async Task HandleFileContenidoSelected(InputFileChangeEventArgs e)
     {
-        var res = await swal.FireAsync(new SweetAlertOptions
+        var file = e.File;
+        var buffer = new byte[file.Size];
+        await file.OpenReadStream().ReadAsync(buffer);
+        base64ImageContenido = Convert.ToBase64String(buffer);
+        articulo.ImagenContenido = base64ImageContenido;
+    }
+
+    private async Task DeleteArticulo()
+    {
+        var confirm = await swal.FireAsync(new SweetAlertOptions
             {
-                Title = "Exito",
-                Text = "Guardado con exito!!!",
+                Title = "Eliminar Artículo",
+                Text = "¿Estás seguro de que quieres eliminar este artículo?",
+                Icon = SweetAlertIcon.Warning,
+                ConfirmButtonText = "Sí, eliminar",
+                CancelButtonText = "Cancelar",
+                ShowCancelButton = true
+            });
+
+        if (confirm.IsConfirmed)
+        {
+            var response = await Http.DeleteAsync($"api/articulos/{Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                await alertGuarda();
+                IrALista();
+            }
+            else
+            {
+                await alertNoGuarda();
+            }
+        }
+    }
+
+    public async Task alertGuarda()
+    {
+        await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Éxito",
+                Text = "Guardado con éxito!!!",
                 Icon = SweetAlertIcon.Success,
                 ConfirmButtonText = "OK"
-
             });
     }
 
-    public async void alertNoGuarda()
+    public async Task alertNoGuarda()
     {
-        var res = await swal.FireAsync(new SweetAlertOptions
+        await swal.FireAsync(new SweetAlertOptions
             {
                 Title = "Error",
-                Text = "No Guarda!!!",
+                Text = "No se guardó!!!",
                 Icon = SweetAlertIcon.Error,
                 ConfirmButtonText = "OK"
-
             });
     }
 
     private void IrALista()
     {
-        nav.NavigateTo("/ConsultaMedicos");
+        nav.NavigateTo("/ConsultaArticulos");
     }
 }

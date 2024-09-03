@@ -1,31 +1,39 @@
-﻿@page "/ConsultaMedicos"
+﻿@page "/ConsultaArticulos"
 @using ProyectoCMSR.Shared.DTOS
 @inject HttpClient Http
-@using MudBlazor
+@inject NavigationManager nav
 
-<MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4">Lista de Médicos</MudText>
+<MudCardActions>
+    <MudButton class="text-white" Style="background-color:steelblue" OnClick="IrACrearArticulo" aria-label="create">Crear Artículo</MudButton>
+</MudCardActions>
 
-@if (medicos == null)
+<h3 class="text-2xl font-semibold mb-4">Artículos</h3>
+
+@if (articulos == null)
 {
-    <MudText Typo="Typo.body1" Align="Align.Center"><em>Cargando...</em></MudText>
+    <p class="text-gray-500 mt-4"><em>Cargando artículos...</em></p>
 }
-else if (!medicos.Any())
+else if (!articulos.Any())
 {
-    <MudText Typo="Typo.body1" Align="Align.Center">No hay médicos disponibles.</MudText>
+    <p class="text-gray-700 mt-4">No hay artículos disponibles.</p>
 }
 else
 {
     <MudGrid>
-        @foreach (var med in medicos)
+        @foreach (var art in articulos)
         {
             <MudItem xs="12" sm="6" md="4" lg="3">
                 <MudCard>
-                    <MudCardMedia Image="@GetImageSource(med.ImagenBase64)" />
+                    <MudCardMedia Image="@GetImageSource(art.ImagenPrincipal)" />
                     <MudCardContent>
-                        <MudText Typo="Typo.h6">@med.Nombre</MudText>
+                        <MudText Typo="Typo.h6" class="font-semibold text-lg">@art.Titulo</MudText>
+                        <MudText Typo="Typo.body2" class="text-sm">@art.Autor</MudText>
                     </MudCardContent>
                     <MudCardActions>
-                        <a class="btn btn-sm btn-outline-primary oi oi-eye" href="CrearMedicos/@med.Id">Ver</a>
+                        <a class="btn btn-sm btn-outline-primary flex items-center space-x-2" href="CrearArticulos/@art.Id">
+                            <i class="fa fa-eye"></i>
+                            <span>Ver</span>
+                        </a>
                     </MudCardActions>
                 </MudCard>
             </MudItem>
@@ -34,11 +42,18 @@ else
 }
 
 @code {
-    private List<Medicos_M> medicos;
+    private List<Articulos_M> articulos = new List<Articulos_M>();
 
     protected override async Task OnInitializedAsync()
     {
-        medicos = await Http.GetFromJsonAsync<List<Medicos_M>>("api/medicos/getMedicos");
+        try
+        {
+            articulos = await Http.GetFromJsonAsync<List<Articulos_M>>("api/articulos/getArticulos");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error al cargar datos: {ex.Message}");
+        }
     }
 
     private string GetImageSource(string base64Image)
@@ -46,21 +61,8 @@ else
         return $"data:image/png;base64,{base64Image}";
     }
 
-    private async Task DeleteMedico(int id)
+    public void IrACrearArticulo()
     {
-        var response = await Http.DeleteAsync($"api/medicos/{id}");
-        if (response.IsSuccessStatusCode)
-        {
-            var deletedMedico = medicos.FirstOrDefault(m => m.Id == id);
-            if (deletedMedico != null)
-            {
-                medicos.Remove(deletedMedico);
-                StateHasChanged();
-            }
-        }
-        else
-        {
-            // Handle the error, maybe show a message to the user
-        }
+        nav.NavigateTo("/CrearArticulos");
     }
 }

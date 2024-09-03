@@ -18,8 +18,4 @@
     <ProjectReference Include="..\Shared\ProyectoCMSR.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Pages\Articulos\" />
-  </ItemGroup>
-
 </Project>

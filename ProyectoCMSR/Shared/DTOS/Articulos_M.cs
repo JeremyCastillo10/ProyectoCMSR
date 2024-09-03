@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ProyectoCMSR.Shared.DTOS
 {
-    class Articulos_M
+    public class Articulos_M
     {
         public int Id { get; set; }               // Identificador único del artículo
         public string Titulo { get; set; }        // Título del artículo

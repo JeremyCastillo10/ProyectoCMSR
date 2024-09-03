@@ -64,12 +64,11 @@ namespace ProyectoCMSR.Server.Controllers
         }
 
 
-        // GET: api/medicos
-        // GET: api/medicos
         [HttpGet("getMedicos")]
         public async Task<ActionResult<IEnumerable<Medicos_M>>> GetAllMedicos()
         {
             var medicos = await _contexto.Medicos
+                .Where(m => m.Visible == true)
                 .Select(m => new Medicos_M
                 {
                     Id = m.Id,
@@ -97,7 +96,101 @@ namespace ProyectoCMSR.Server.Controllers
 
             return Ok(true);
         }
+        [HttpGet("getMedicosByEspecialidad/{especialidadId}")]
+        public async Task<ActionResult<IEnumerable<Medicos_M>>> GetMedicosByEspecialidad(int especialidadId)
+        {
+            var medicos = await _contexto.Medicos
+                .Where(m => m.EspecialidadId == especialidadId && m.Visible == true)
+                .Select(m => new Medicos_M
+                {
+                    Id = m.Id,
+                    Nombre = m.Nombre,
+                    Descripcion = m.Descripcion,
+                    EspecialidadId = m.EspecialidadId,
+                    ImagenBase64 = m.ImagenMedico != null ? Convert.ToBase64String(m.ImagenMedico) : null
+                })
+                .ToListAsync();
 
+            if (medicos == null || !medicos.Any())
+            {
+                return NotFound();
+            }
+
+            return Ok(medicos);
+        }
+        [HttpGet("getMedicosByNombre")]
+        public async Task<ActionResult<IEnumerable<Medicos_M>>> GetMedicosByNombre([FromQuery] string nombre)
+        {
+            if (string.IsNullOrEmpty(nombre))
+            {
+                return BadRequest("El parámetro 'nombre' es obligatorio.");
+            }
+
+            var medicos = await _contexto.Medicos
+                .Where(m => m.Nombre.Contains(nombre, StringComparison.OrdinalIgnoreCase) && m.Visible == true)
+                .Select(m => new Medicos_M
+                {
+                    Id = m.Id,
+                    Nombre = m.Nombre,
+                    Descripcion = m.Descripcion,
+                    EspecialidadId = m.EspecialidadId,
+                    ImagenBase64 = m.ImagenMedico != null ? Convert.ToBase64String(m.ImagenMedico) : null
+                })
+                .ToListAsync();
+
+            if (medicos == null || !medicos.Any())
+            {
+                return NotFound("No se encontraron médicos con el nombre proporcionado.");
+            }
+
+            return Ok(medicos);
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult> PutMedico(int id, [FromBody] Medicos_M medico_M)
+        {
+            if (medico_M == null)
+            {
+                return BadRequest("Medico object is null");
+            }
+
+            // Validar el modelo
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Buscar el médico existente
+            var medico = await _contexto.Medicos.FirstOrDefaultAsync(m => m.Id == id);
+            if (medico == null)
+            {
+                return NotFound("Medico not found");
+            }
+
+            // Actualizar los campos del médico
+            medico.Nombre = medico_M.Nombre;
+            medico.Descripcion = medico_M.Descripcion;
+            medico.EspecialidadId = medico_M.EspecialidadId;
+
+            // Actualizar la imagen si se proporciona
+            if (!string.IsNullOrEmpty(medico_M.ImagenBase64))
+            {
+                try
+                {
+                    medico.ImagenMedico = Convert.FromBase64String(medico_M.ImagenBase64);
+                }
+                catch (FormatException)
+                {
+                    return BadRequest("Invalid base64 format for image.");
+                }
+            }
+
+            // No es necesario llamar a Update si estás obteniendo la entidad con FirstOrDefaultAsync
+            // El seguimiento de cambios ya está habilitado en Entity Framework
+            await _contexto.SaveChangesAsync();
+
+            return Ok("Medico updated successfully");
+        }
 
 
         //[HttpDelete("{id}")]
@@ -116,4 +209,5 @@ namespace ProyectoCMSR.Server.Controllers
         //    return Ok(true);
         //}
     }
+
 }
